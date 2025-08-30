@@ -1,15 +1,18 @@
 import React, { useMemo, useState } from "react";
-import { COUNTRY_LIST } from "./policies";
+import { COUNTRIES, getCandidates } from "../lib/load";
 import { analyzeImpact } from "./impactEngine";
 
 export default function App(){
-  const countries = useMemo(()=>COUNTRY_LIST, []);
+  const countries = useMemo(()=>COUNTRIES, []);
   const [country, setCountry] = useState(null);
+  const [candidate, setCandidate] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [result, setResult] = useState(null);
 
-  function handleAnalyze(){
-    if(!country) return;
+  const candidates = useMemo(()=> country ? getCandidates(country) : [], [country]);
+
+  function openSurvey(){
+    if (!country || !candidate) return;
     setShowModal(true);
   }
 
@@ -19,11 +22,10 @@ export default function App(){
     const concerns = Array.from(
       e.currentTarget.querySelector("#concerns").selectedOptions
     ).map(o => o.value);
-    if(concerns.length > 3){
+    if (concerns.length > 3){
       alert("Please select up to 3 major concerns.");
       return;
     }
-
     const user = {
       age: Number(form.get("age") || 0),
       gender: form.get("gender"),
@@ -37,7 +39,6 @@ export default function App(){
       race: form.get("race") || null
     };
 
-    const candidate = window.prompt(`Which candidate in ${country}? (e.g., Candidate A, Candidate B)`) || "Candidate A";
     const out = analyzeImpact(user, country, candidate);
     setResult({ out, user });
     setShowModal(false);
@@ -46,22 +47,36 @@ export default function App(){
   return (
     <main className="mf-wrap">
       <h1 className="mf-title">Manifesto AI</h1>
-      <p className="mf-subtitle">Click a country to explore political insights:</p>
+      <p className="mf-subtitle">Pick a country, choose a candidate, then analyze your personal impact.</p>
 
       <div className="mf-country-strip">
         {countries.map(c => (
           <button
             key={c}
             className={"mf-pill" + (country === c ? " mf-pill-active" : "")}
-            onClick={()=> setCountry(c)}
+            onClick={() => { setCountry(c); setCandidate(null); }}
           >
             <span className="mf-flag">{flagFor(c)}</span> {c}
           </button>
         ))}
       </div>
 
-      <div className="mf-cta">
-        <button className="mf-btn" disabled={!country} onClick={handleAnalyze}>
+      {country && (
+        <div style={{display:"flex", gap:12, flexWrap:"wrap", marginTop:12}}>
+          {candidates.map(cand => (
+            <button
+              key={cand}
+              className={"mf-pill" + (candidate === cand ? " mf-pill-active" : "")}
+              onClick={() => setCandidate(cand)}
+            >
+              {cand}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mf-cta" style={{marginTop:16}}>
+        <button className="mf-btn" disabled={!country || !candidate} onClick={openSurvey}>
           Analyze Further
         </button>
       </div>
@@ -70,7 +85,7 @@ export default function App(){
         <div className="mf-modal" onClick={(e)=>{ if(e.target.classList.contains("mf-modal")) setShowModal(false); }}>
           <form className="mf-card" onSubmit={onSubmit}>
             <h3>Your Profile</h3>
-            <p className="mf-muted">Answer a few questions so we can show how policies in <b>{country}</b> may impact you.</p>
+            <p className="mf-muted">Answer a few questions so we can show how policies in <b>{country}</b> by <b>{candidate}</b> may impact you.</p>
 
             <div className="mf-grid">
               <div>
@@ -183,8 +198,11 @@ function ImpactPanel({ data }){
   return (
     <section className="mf-impact">
       <h3>Estimated Impact for <b>{out.candidate}</b> in <b>{out.country}</b></h3>
+      {out.source_manifesto_url && (
+        <p className="mf-muted">Source: <a href={out.source_manifesto_url} target="_blank" rel="noreferrer">{out.source_manifesto_url}</a></p>
+      )}
       <p className="mf-muted">
-        Profile: {user.employment}, {user.location.toLowerCase()}, commute: {user.commute.toLowerCase()}, income: €{user.income}/mo
+        Profile: {user.employment}, {user.location?.toLowerCase?.()}, commute: {user.commute?.toLowerCase?.()}, income: €{user.income}/mo
       </p>
       <div className="mf-table-wrap">
         <table className="mf-table">
@@ -193,19 +211,27 @@ function ImpactPanel({ data }){
               <th>Policy</th>
               <th style={{textAlign:"right"}}>Benefit / mo</th>
               <th style={{textAlign:"right"}}>Cost / mo</th>
-              <th>Notes</th>
+              <th>Notes / Effective</th>
             </tr>
           </thead>
           <tbody>
             {out.rows.length ? out.rows.map((r,i)=>(
-              <tr key={i}>
-                <td>{r.title}</td>
+              <tr key={r.id || i}>
+                <td>
+                  <div style={{fontWeight:600}}>{r.title}</div>
+                  <div className="mf-muted" style={{fontSize:12}}>
+                    {r.description}{' '}
+                    {r.source_url && <>| <a href={r.source_url} target="_blank" rel="noreferrer">source</a></>}
+                  </div>
+                </td>
                 <td style={{textAlign:"right"}}>€{r.monthlyBenefit.toFixed(2)}</td>
                 <td style={{textAlign:"right"}}>€{r.monthlyCost.toFixed(2)}</td>
-                <td className="mf-note">{r.note || ""}</td>
+                <td className="mf-note">
+                  {r.note || ""} {r.effective_date ? `(${r.effective_date})` : ""}
+                </td>
               </tr>
             )) : (
-              <tr><td colSpan={4}>No direct impacts detected.</td></tr>
+              <tr><td colSpan={4}>No policies available yet for this candidate.</td></tr>
             )}
           </tbody>
         </table>
