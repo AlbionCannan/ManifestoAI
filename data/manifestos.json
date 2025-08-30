@@ -1,1 +1,14 @@
-
+{
+  "manifests": [
+    { "country": "France",  "candidate": "Candidate A", "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
+    { "country": "France",  "candidate": "Candidate B", "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
+    { "country": "Germany", "candidate": "Candidate A", "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
+    { "country": "Germany", "candidate": "Candidate B", "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
+    { "country": "Italy",   "candidate": "Candidate A", "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
+    { "country": "Italy",   "candidate": "Candidate B", "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
+    { "country": "Poland",  "candidate": "Candidate A", "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
+    { "country": "Poland",  "candidate": "Candidate B", "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
+    { "country": "Spain",   "candidate": "Candidate A", "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
+    { "country": "Spain",   "candidate": "Candidate B", "source_manifesto_url": "", "retrieved_at": "", "policies": [] }
+  ]
+}
