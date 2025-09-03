@@ -1,6 +1,14 @@
 :root { color-scheme: light dark; }
-html, body, #root { height: 100%; }
-body { margin:0; font-family: Poppins, system-ui, Arial, sans-serif; }
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: #23384a;   /* <-- make full page dark blue */
+}
+
+body {
+  font-family: Poppins, system-ui, Arial, sans-serif;
+  color: #e8f1f7;         /* keep text readable */
+}
 
 /* ===== Manifesto AI UI (scoped with mf-) ===== */
 .mf-wrap{max-width:980px;margin:0 auto;padding:48px 24px 96px;display:flex;flex-direction:column;align-items:center;gap:28px;background:#23384a;min-height:100vh;color:#e8f1f7}
