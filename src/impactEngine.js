@@ -1,5 +1,5 @@
-import { getAssumption } from "./config/assumptions";
-import { getManifest } from "./lib/load";
+import { getAssumption } from "./config/assumptions";    // <= must be ./config/...
+import { getManifest } from "./lib/load";  
 
 // Eligibility checker
 function eligible(user, e = {}){
