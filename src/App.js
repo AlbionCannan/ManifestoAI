@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { COUNTRIES, getCandidates } from "../lib/load";
+import { COUNTRIES, getCandidates } from "./lib/load";   // <= must be ./lib/...
 import { analyzeImpact } from "./impactEngine";
 
 export default function App(){
