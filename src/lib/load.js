@@ -1,4 +1,4 @@
-import RAW from "../data/manifestos.json";
+import RAW from "../data/manifestos.json";               // from lib -> data
 import { validateManifest, validatePolicy } from "./schema";
 
 const _byCountry = new Map(); // country -> Map(candidate -> manifest)
