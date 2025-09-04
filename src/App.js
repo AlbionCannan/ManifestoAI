@@ -1,253 +1,175 @@
+// src/App.js
 import React, { useMemo, useState } from "react";
-import { COUNTRIES, getCandidates } from "./lib/load";   // <= must be ./lib/...
-import { analyzeImpact } from "./impactEngine";
+import { COUNTRIES, getCandidates } from "./lib/load"; // must export both
+import { analyzeImpact } from "./impactEngine";        // must export analyzeImpact
+import PartySpectrum from "./PartySpectrum";           // the logos+abbrev component
 
-export default function App(){
-  const countries = useMemo(()=>COUNTRIES, []);
+// A tiny, self-contained modal so App.js doesn't depend on any other UI files.
+function Modal({ open, onClose, children }) {
+  if (!open) return null;
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, display: "grid", placeItems: "center",
+        background: "rgba(0,0,0,0.5)", zIndex: 50
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: "min(720px, 92vw)",
+          background: "white",
+          borderRadius: 16,
+          padding: 20,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const countries = useMemo(() => COUNTRIES ?? [], []);
   const [country, setCountry] = useState(null);
   const [candidate, setCandidate] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [result, setResult] = useState(null);
+  const candidates = useMemo(
+    () => (country ? getCandidates(country) : []),
+    [country]
+  );
 
-  const candidates = useMemo(()=> country ? getCandidates(country) : [], [country]);
-
-  function openSurvey(){
+  function openSurvey() {
     if (!country || !candidate) return;
     setShowModal(true);
   }
 
-  function onSubmit(e){
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const concerns = Array.from(
-      e.currentTarget.querySelector("#concerns").selectedOptions
-    ).map(o => o.value);
-    if (concerns.length > 3){
-      alert("Please select up to 3 major concerns.");
-      return;
+  async function runImpact(e) {
+    e?.preventDefault?.();
+    try {
+      // You can pass whatever structure your engine expects:
+      const r = await analyzeImpact({ country, candidate });
+      setResult(r);
+      setShowModal(false);
+    } catch (err) {
+      console.error("analyzeImpact failed:", err);
+      setResult({ error: String(err) });
+      setShowModal(false);
     }
-    const user = {
-      age: Number(form.get("age") || 0),
-      gender: form.get("gender"),
-      location: form.get("location"),
-      income: Number(form.get("income") || 0),
-      employment: form.get("employment"),
-      home: form.get("home"),
-      commute: form.get("commute"),
-      concerns,
-      religion: form.get("religion") || null,
-      race: form.get("race") || null
-    };
-
-    const out = analyzeImpact(user, country, candidate);
-    setResult({ out, user });
-    setShowModal(false);
   }
 
   return (
-    <main className="mf-wrap">
-      <h1 className="mf-title">Manifesto AI</h1>
-      <p className="mf-subtitle">Pick a country, choose a candidate, then analyze your personal impact.</p>
+    <div style={{ padding: 24 }}>
+      <h1 style={{ marginBottom: 12 }}>ManifestoAI — Demo</h1>
 
-      <div className="mf-country-strip">
-        {countries.map(c => (
-          <button
-            key={c}
-            className={"mf-pill" + (country === c ? " mf-pill-active" : "")}
-            onClick={() => { setCountry(c); setCandidate(null); }}
+      {/* Controls */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr auto",
+        gap: 12,
+        alignItems: "end",
+        marginBottom: 24
+      }}>
+        <div>
+          <label style={{ display: "block", fontSize: 12, opacity: 0.7 }}>Country</label>
+          <select
+            value={country ?? ""}
+            onChange={(e) => {
+              const c = e.target.value || null;
+              setCountry(c);
+              setCandidate(null);
+              setResult(null);
+            }}
+            style={{ width: "100%", padding: 8 }}
           >
-            <span className="mf-flag">{flagFor(c)}</span> {c}
-          </button>
-        ))}
-      </div>
-
-      {country && (
-        <div style={{display:"flex", gap:12, flexWrap:"wrap", marginTop:12}}>
-          {candidates.map(cand => (
-            <button
-              key={cand}
-              className={"mf-pill" + (candidate === cand ? " mf-pill-active" : "")}
-              onClick={() => setCandidate(cand)}
-            >
-              {cand}
-            </button>
-          ))}
+            <option value="">— Select —</option>
+            {countries.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
-      )}
 
-      <div className="mf-cta" style={{marginTop:16}}>
-        <button className="mf-btn" disabled={!country || !candidate} onClick={openSurvey}>
-          Analyze Further
+        <div>
+          <label style={{ display: "block", fontSize: 12, opacity: 0.7 }}>Party / Candidate</label>
+          <select
+            value={candidate ?? ""}
+            onChange={(e) => {
+              const v = e.target.value || null;
+              setCandidate(v);
+              setResult(null);
+            }}
+            disabled={!country}
+            style={{ width: "100%", padding: 8 }}
+          >
+            <option value="">— Select —</option>
+            {candidates.map((p) => (
+              // accept either {short, name} or plain string
+              <option key={typeof p === "string" ? p : p.short || p.name}
+                      value={typeof p === "string" ? p : p.short || p.name}>
+                {typeof p === "string" ? p : (p.short || p.name)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={openSurvey}
+          disabled={!country || !candidate}
+          style={{ padding: "10px 14px" }}
+        >
+          Analyze
         </button>
       </div>
 
-      {showModal && (
-        <div className="mf-modal" onClick={(e)=>{ if(e.target.classList.contains("mf-modal")) setShowModal(false); }}>
-          <form className="mf-card" onSubmit={onSubmit}>
-            <h3>Your Profile</h3>
-            <p className="mf-muted">Answer a few questions so we can show how policies in <b>{country}</b> by <b>{candidate}</b> may impact you.</p>
-
-            <div className="mf-grid">
-              <div>
-                <label>Age</label>
-                <input className="mf-field" name="age" type="number" min="14" max="120" required />
-              </div>
-
-              <div>
-                <label>Gender</label>
-                <select className="mf-field" name="gender" required>
-                  <option value="" disabled>Select…</option>
-                  <option>Female</option>
-                  <option>Male</option>
-                  <option>Prefer not to say</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label>City vs Rural</label>
-                <select className="mf-field" name="location" required>
-                  <option value="" disabled>Select…</option>
-                  <option>City</option>
-                  <option>Town/Suburban</option>
-                  <option>Rural</option>
-                </select>
-              </div>
-
-              <div>
-                <label>Monthly Income (€)</label>
-                <input className="mf-field" name="income" type="number" min="0" step="50" required />
-              </div>
-
-              <div>
-                <label>Employment Status</label>
-                <select className="mf-field" name="employment" required>
-                  <option value="" disabled>Select…</option>
-                  <option>Employed</option>
-                  <option>Self-employed</option>
-                  <option>Unemployed</option>
-                  <option>Student</option>
-                  <option>Retired</option>
-                </select>
-              </div>
-
-              <div>
-                <label>Home Ownership</label>
-                <select className="mf-field" name="home" required>
-                  <option value="" disabled>Select…</option>
-                  <option>Own</option>
-                  <option>Rent</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label>Commute Type</label>
-                <select className="mf-field" name="commute" required>
-                  <option value="" disabled>Select…</option>
-                  <option>Public Transport</option>
-                  <option>Car</option>
-                  <option>Walk</option>
-                  <option>Cycle</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label>Major Concerns (up to 3)</label>
-                <select className="mf-field" id="concerns" name="concerns" multiple size="6">
-                  <option>Economy</option>
-                  <option>Healthcare</option>
-                  <option>Environment</option>
-                  <option>Taxes</option>
-                  <option>Social Programs</option>
-                  <option>Immigration</option>
-                  <option>Education</option>
-                  <option>Security</option>
-                  <option>Other</option>
-                </select>
-                <p className="mf-muted">Hold Cmd/Ctrl to multi-select.</p>
-              </div>
-
-              <div>
-                <label>Religion (optional)</label>
-                <input className="mf-field" name="religion" type="text" />
-              </div>
-
-              <div>
-                <label>Race / Ethnicity (optional)</label>
-                <input className="mf-field" name="race" type="text" />
-              </div>
-            </div>
-
-            <div className="mf-actions">
-              <button type="button" className="mf-btn-ghost" onClick={()=>setShowModal(false)}>Cancel</button>
-              <button className="mf-btn-primary">See My Impact</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {result && <ImpactPanel data={result} />}
-    </main>
-  );
-}
-
-function ImpactPanel({ data }){
-  const { out, user } = data;
-  return (
-    <section className="mf-impact">
-      <h3>Estimated Impact for <b>{out.candidate}</b> in <b>{out.country}</b></h3>
-      {out.source_manifesto_url && (
-        <p className="mf-muted">Source: <a href={out.source_manifesto_url} target="_blank" rel="noreferrer">{out.source_manifesto_url}</a></p>
-      )}
-      <p className="mf-muted">
-        Profile: {user.employment}, {user.location?.toLowerCase?.()}, commute: {user.commute?.toLowerCase?.()}, income: €{user.income}/mo
-      </p>
-      <div className="mf-table-wrap">
-        <table className="mf-table">
-          <thead>
-            <tr>
-              <th>Policy</th>
-              <th style={{textAlign:"right"}}>Benefit / mo</th>
-              <th style={{textAlign:"right"}}>Cost / mo</th>
-              <th>Notes / Effective</th>
-            </tr>
-          </thead>
-          <tbody>
-            {out.rows.length ? out.rows.map((r,i)=>(
-              <tr key={r.id || i}>
-                <td>
-                  <div style={{fontWeight:600}}>{r.title}</div>
-                  <div className="mf-muted" style={{fontSize:12}}>
-                    {r.description}{' '}
-                    {r.source_url && <>| <a href={r.source_url} target="_blank" rel="noreferrer">source</a></>}
-                  </div>
-                </td>
-                <td style={{textAlign:"right"}}>€{r.monthlyBenefit.toFixed(2)}</td>
-                <td style={{textAlign:"right"}}>€{r.monthlyCost.toFixed(2)}</td>
-                <td className="mf-note">
-                  {r.note || ""} {r.effective_date ? `(${r.effective_date})` : ""}
-                </td>
-              </tr>
-            )) : (
-              <tr><td colSpan={4}>No policies available yet for this candidate.</td></tr>
-            )}
-          </tbody>
-        </table>
+      {/* Party spectrum (logos + abbreviations, left→right) */}
+      <div style={{ marginBottom: 24 }}>
+        <PartySpectrum />
       </div>
-      <div className="mf-totals">
-        <span className="mf-chip">Benefits: <b>€{out.monthlyBenefit.toFixed(2)}/mo</b></span>
-        <span className="mf-chip">Costs: <b>€{out.monthlyCost.toFixed(2)}/mo</b></span>
-        <span className={"mf-chip " + (out.net>=0 ? "mf-chip-pos":"mf-chip-neg")}>
-          Net: <b>€{out.net.toFixed(2)}/mo</b>
-        </span>
-      </div>
-    </section>
-  );
-}
 
-function flagFor(c){
-  const map = { France:"🇫🇷", Germany:"🇩🇪", Italy:"🇮🇹", Poland:"🇵🇱", Spain:"🇪🇸" };
-  return map[c] || "🏳️";
+      {/* Results */}
+      <div style={{
+        border: "1px solid #eee", borderRadius: 12, padding: 16,
+        minHeight: 80, background: "#fafafa"
+      }}>
+        <strong>Result</strong>
+        <pre style={{ whiteSpace: "pre-wrap" }}>
+{JSON.stringify(result ?? { info: "Pick a country & party, then click Analyze." }, null, 2)}
+        </pre>
+      </div>
+
+      {/* The simple survey modal */}
+      <Modal open={showModal} onClose={() => setShowModal(false)}>
+        <h3 style={{ marginTop: 0 }}>Quick Survey</h3>
+        <form onSubmit={runImpact} style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <label>
+              Age
+              <input type="number" name="age" min="16" max="99" style={{ width: "100%", padding: 8 }}/>
+            </label>
+            <label>
+              Monthly Income (€)
+              <input type="number" name="income" style={{ width: "100%", padding: 8 }}/>
+            </label>
+          </div>
+          <label>
+            Employment Status
+            <select name="employment" style={{ width: "100%", padding: 8 }}>
+              <option>Employed</option>
+              <option>Self-employed</option>
+              <option>Unemployed</option>
+              <option>Student</option>
+              <option>Retired</option>
+            </select>
+          </label>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
+            <button type="submit">Run Impact</button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
 }
