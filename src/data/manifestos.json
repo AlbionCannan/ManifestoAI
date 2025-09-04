@@ -5,26 +5,93 @@
       "name": "France",
       "flag": "🇫🇷",
       "parties": [
-        { "id": "fr.lfi", "name": "La France Insoumise", "ideology": "Left", "logo": "" },
-        { "id": "fr.pcf", "name": "Parti Communiste Français", "ideology": "Left", "logo": "" },
-        { "id": "fr.eelv", "name": "Europe Écologie – Les Verts", "ideology": "Green", "logo": "" },
-        { "id": "fr.ps",  "name": "Parti Socialiste", "ideology": "Center-left", "logo": "" },
-        { "id": "fr.re",  "name": "Renaissance", "ideology": "Centrist", "logo": "" },
-        { "id": "fr.lr",  "name": "Les Républicains", "ideology": "Center-right", "logo": "" },
-        { "id": "fr.rn",  "name": "Rassemblement National", "ideology": "Right", "logo": "" }
+        {
+          "id": "fr.lfi",
+          "name": "La France Insoumise",
+          "ideology": "Left",
+          "logo": "",
+          "policies": {
+            "taxCuts": 1,
+            "welfareIncrease": 5,
+            "nuclearEnergy": 2,
+            "immigrationTighten": 1
+          }
+        },
+        {
+          "id": "fr.pcf",
+          "name": "Parti Communiste Français",
+          "ideology": "Left",
+          "logo": "",
+          "policies": {
+            "taxCuts": 1,
+            "welfareIncrease": 5,
+            "nuclearEnergy": 2,
+            "immigrationTighten": 1
+          }
+        },
+        {
+          "id": "fr.eelv",
+          "name": "Europe Écologie – Les Verts",
+          "ideology": "Green",
+          "logo": "",
+          "policies": {
+            "taxCuts": 2,
+            "welfareIncrease": 4,
+            "nuclearEnergy": 1,
+            "immigrationTighten": 2
+          }
+        },
+        {
+          "id": "fr.ps",
+          "name": "Parti Socialiste",
+          "ideology": "Center-left",
+          "logo": "",
+          "policies": {
+            "taxCuts": 3,
+            "welfareIncrease": 4,
+            "nuclearEnergy": 3,
+            "immigrationTighten": 2
+          }
+        },
+        {
+          "id": "fr.re",
+          "name": "Renaissance",
+          "ideology": "Centrist",
+          "logo": "",
+          "policies": {
+            "taxCuts": 3,
+            "welfareIncrease": 3,
+            "nuclearEnergy": 4,
+            "immigrationTighten": 3
+          }
+        },
+        {
+          "id": "fr.lr",
+          "name": "Les Républicains",
+          "ideology": "Center-right",
+          "logo": "",
+          "policies": {
+            "taxCuts": 4,
+            "welfareIncrease": 2,
+            "nuclearEnergy": 4,
+            "immigrationTighten": 4
+          }
+        },
+        {
+          "id": "fr.rn",
+          "name": "Rassemblement National",
+          "ideology": "Right",
+          "logo": "",
+          "policies": {
+            "taxCuts": 4,
+            "welfareIncrease": 2,
+            "nuclearEnergy": 4,
+            "immigrationTighten": 5
+          }
+        }
       ]
     },
-    {
-      "code": "DE",
-      "name": "Germany",
-      "flag": "🇩🇪",
-      "parties": []
-    },
-    {
-      "code": "IT",
-      "name": "Italy",
-      "flag": "🇮🇹",
-      "parties": []
-    }
+    { "code": "DE", "name": "Germany", "flag": "🇩🇪", "parties": [] },
+    { "code": "IT", "name": "Italy", "flag": "🇮🇹", "parties": [] }
   ]
 }
