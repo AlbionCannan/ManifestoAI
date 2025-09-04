@@ -82,8 +82,7 @@ export default function App() {
     const opts = Array.from(e.target.options);
     const selected = opts.filter(o => o.selected);
     if (selected.length > 3) {
-      const last = selected[selected.length - 1];
-      last.selected = false;
+      selected[selected.length - 1].selected = false;
     }
   }
 
@@ -106,7 +105,7 @@ export default function App() {
         race: form.get("race")
       }
     };
-    await analyzeImpact(payload); // keep your logic
+    await analyzeImpact(payload);
     setShowSurvey(false);
   }
 
@@ -140,66 +139,130 @@ export default function App() {
       {/* SURVEY */}
       <Modal open={showSurvey} onClose={() => setShowSurvey(false)}>
         <h2 style={{ margin: 0 }}>Your Profile</h2>
-        <p>Answer a few questions so we can show how policies in <b>{country}</b> by <b>{partyFull} ({party})</b> may impact you.</p>
+        <p>Answer a few questions so we can show how policies in <b>{country}</b>{partyFull ? <> by <b>{partyFull} ({party})</b></> : null} may impact you.</p>
+
         <form onSubmit={runImpact} style={{ display: "grid", gap: 14 }}>
           <div style={ui.formGrid}>
             <div>
               <label style={ui.label}>Age</label>
               <input name="age" type="number" min="16" max="99" style={ui.input} />
             </div>
+
             <div>
               <label style={ui.label}>Gender</label>
-              <select name="gender" style={ui.input}>
-                <option>Female</option><option>Male</option><option>Other</option><option>Prefer not to say</option>
+              <select name="gender" style={ui.input} defaultValue="">
+                <option value="">— Select —</option>
+                <option>Female</option>
+                <option>Male</option>
+                <option>Other</option>
+                <option>Prefer not to say</option>
               </select>
             </div>
+
             <div>
               <label style={ui.label}>City vs Rural</label>
-              <select name="cityRural" style={ui.input}>
-                <option>City</option><option>Suburban</option><option>Rural</option>
+              <select name="cityRural" style={ui.input} defaultValue="">
+                <option value="">— Select —</option>
+                <option>City</option>
+                <option>Town</option>
+                <option>Suburban</option>
+                <option>Rural</option>
               </select>
             </div>
+
             <div>
               <label style={ui.label}>Monthly Income (€)</label>
-              <select name="income" style={ui.input}>
-                <option>0–1,000</option><option>1,000–2,000</option><option>2,000–3,000</option>
-                <option>3,000–5,000</option><option>5,000–7,000</option><option>7,000–10,000</option><option>10,000+</option>
+              <select name="income" style={ui.input} defaultValue="">
+                <option value="">— Select —</option>
+                <option>Less than 1,000</option>
+                <option>1,000 – 1,999</option>
+                <option>2,000 – 2,999</option>
+                <option>3,000 – 3,999</option>
+                <option>4,000 – 4,999</option>
+                <option>5,000 – 6,999</option>
+                <option>7,000 – 9,999</option>
+                <option>10,000 – 14,999</option>
+                <option>15,000 – 19,999</option>
+                <option>20,000 – 29,999</option>
+                <option>30,000 – 49,999</option>
+                <option>50,000 or more</option>
               </select>
             </div>
+
             <div>
               <label style={ui.label}>Employment Status</label>
-              <select name="employment" style={ui.input}>
-                <option>Employed</option><option>Self-employed</option><option>Unemployed</option><option>Student</option><option>Retired</option>
+              <select name="employment" style={ui.input} defaultValue="">
+                <option value="">— Select —</option>
+                <option>Employed</option>
+                <option>Self-employed</option>
+                <option>Unemployed</option>
+                <option>Student</option>
+                <option>Retired</option>
               </select>
             </div>
+
             <div>
               <label style={ui.label}>Home Ownership</label>
-              <select name="home" style={ui.input}><option>Own</option><option>Rent</option><option>Other</option></select>
+              <select name="home" style={ui.input} defaultValue="">
+                <option value="">— Select —</option>
+                <option>Own</option>
+                <option>Rent</option>
+                <option>Other</option>
+              </select>
             </div>
+
             <div>
               <label style={ui.label}>Commute Type</label>
-              <select name="commute" style={ui.input}><option>Public Transport</option><option>Car</option><option>Walk</option><option>Bike</option><option>Other</option></select>
+              <select name="commute" style={ui.input} defaultValue="">
+                <option value="">— Select —</option>
+                <option>Public Transport</option>
+                <option>Car</option>
+                <option>Walk</option>
+                <option>Bike</option>
+                <option>Other</option>
+              </select>
             </div>
+
             <div>
               <label style={ui.label}>Major Concerns (up to 3)</label>
               <select name="concerns" multiple onChange={limitConcerns} style={ui.multi}>
-                <option>Economy</option><option>Healthcare</option><option>Environment</option><option>Taxes</option>
-                <option>Social Programs</option><option>Immigration</option>
+                <option>Economy</option>
+                <option>Healthcare</option>
+                <option>Environment</option>
+                <option>Taxes</option>
+                <option>Social Programs</option>
+                <option>Immigration</option>
+                <option>Security</option>
+                <option>Geopolitical Risks</option>
+                <option>Digital Regulation</option>
+                <option>Discrimination</option>
               </select>
               <div style={ui.help}>Hold Cmd/Ctrl to select up to 3</div>
             </div>
+
             <div>
               <label style={ui.label}>Religion (optional)</label>
               <input name="religion" type="text" style={ui.input} />
             </div>
+
             <div>
               <label style={ui.label}>Race / Ethnicity (optional)</label>
-              <select name="race" style={ui.input}>
-                <option>European</option><option>Middle Eastern</option><option>African</option>
-                <option>Asian</option><option>Latin American</option><option>Mixed</option><option>Other</option>
+              <select name="race" style={ui.input} defaultValue="">
+                <option value="">— Select —</option>
+                <option>White</option>
+                <option>Black or African American</option>
+                <option>Asian</option>
+                <option>American Indian or Alaska Native</option>
+                <option>Native Hawaiian or Other Pacific Islander</option>
+                <option>Hispanic or Latino</option>
+                <option>Middle Eastern or North African</option>
+                <option>Two or More Races</option>
+                <option>Other</option>
+                <option>Prefer not to say</option>
               </select>
             </div>
           </div>
+
           <div style={ui.modalFooter}>
             <button type="button" onClick={() => setShowSurvey(false)} style={{ ...ui.btn, background: "#ccc", color: "#000" }}>Cancel</button>
             <button type="submit" style={ui.btn}>See My Impact</button>
