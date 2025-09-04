@@ -1,18 +1,8 @@
-export const POLICY_INDEX = {
-  France: {
-    LFI: {
-      wages_minimum: {
-        details: "Raise SMIC to 1,600€ net/month; indexation to inflation.",
-        source: "https://programme.lafranceinsoumise.fr"
-      },
-      retirement_age: {
-        details: "Return retirement age to 60 with 40 years of contributions.",
-        source: "https://programme.lafranceinsoumise.fr"
-      },
-      prices_energy: {
-        details: "Freeze or tightly regulate household energy prices during crises.",
-        source: "https://programme.lafranceinsoumise.fr"
-      }
-    }
-  }
-};
+import React from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App";
+
+const rootEl = document.getElementById("root");
+if (!rootEl) throw new Error("Missing #root in public/index.html");
+createRoot(rootEl).render(<App />);
