@@ -1,7 +1,11 @@
 // src/App.js
 import React, { useMemo, useState } from "react";
 import { COUNTRIES, getCandidates } from "./lib/load";
-import { analyzeImpact } from "./impactEngine";
+import * as impact from "./impactEngine";
+const analyzeImpact =
+  (impact && typeof impact.analyzeImpact === "function")
+    ? impact.analyzeImpact
+    : async () => ({ topics: [], summary: "engine offline" });
 
 /* -------------------- UI Styles -------------------- */
 const ui = {
