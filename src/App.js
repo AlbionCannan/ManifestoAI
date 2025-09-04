@@ -1,9 +1,18 @@
 import React from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 
-export default function App() {
+const box = {minHeight:"100vh",display:"grid",placeItems:"center",fontFamily:"system-ui",background:"#0f1115",color:"#e6e7eb"};
+function Home(){ return <div style={box}><h1>Home</h1><Link to="/a">Go A</Link></div>; }
+function A(){ return <div style={box}><h1>Route A</h1><Link to="/">Back</Link></div>; }
+
+export default function App(){
   return (
-    <div style={{minHeight:"100vh",display:"grid",placeItems:"center",fontFamily:"system-ui",background:"#0f1115",color:"#e6e7eb"}}>
-      <h1>Boot OK</h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home/>}/>
+        <Route path="/a" element={<A/>}/>
+        <Route path="*" element={<div style={box}><h1>404</h1></div>} />
+      </Routes>
+    </BrowserRouter>
   );
 }
