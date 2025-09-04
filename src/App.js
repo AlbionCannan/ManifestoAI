@@ -3,232 +3,267 @@ import React, { useMemo, useState } from "react";
 import { COUNTRIES, getCandidates } from "./lib/load";
 import { analyzeImpact } from "./impactEngine";
 
-/** ---------- Small style helpers (scoped, no globals) ---------- */
-const s = {
+/** ========== Tiny style system (scoped) ========== */
+const ui = {
   page: { padding: 24, minHeight: "100vh" },
-  h1: {
-    fontSize: 56, fontWeight: 800, margin: "16px 0 8px", textAlign: "center",
-  },
-  sub: { opacity: 0.8, textAlign: "center", marginBottom: 28 },
-  pillRow: {
-    display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "center", marginBottom: 28,
-  },
+  heroH1: { fontSize: 56, fontWeight: 800, margin: "8px 0 6px", textAlign: "center" },
+  heroSub: { opacity: 0.85, textAlign: "center", marginBottom: 28 },
+  row: { display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "center" },
   pill: {
-    display: "inline-flex", alignItems: "center", gap: 10,
-    padding: "16px 22px", borderRadius: 28, boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
-    background: "#2a79b7", color: "white", fontSize: 20, fontWeight: 700, border: "1px solid rgba(255,255,255,0.1)",
-    cursor: "pointer",
+    display: "inline-flex", alignItems: "center", gap: 10, padding: "16px 22px",
+    borderRadius: 28, background: "#2a79b7", color: "white", fontSize: 20,
+    fontWeight: 700, border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 22px rgba(0,0,0,0.18)",
+    cursor: "pointer"
   },
   flag: { width: 24, height: 24, borderRadius: 6, boxShadow: "0 1px 4px rgba(0,0,0,0.25)" },
-  controls: {
-    display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, alignItems: "end", maxWidth: 900, margin: "0 auto 24px",
-  },
+  sectionH2: { fontSize: 28, fontWeight: 800, margin: "26px 0 12px", textAlign: "center" },
+  grid: { display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, alignItems: "end", maxWidth: 920, margin: "0 auto 22px" },
   select: { width: "100%", padding: 10, borderRadius: 10, border: "1px solid #d0d7de" },
-  btn: {
-    padding: "10px 14px", borderRadius: 10, border: "1px solid #d0d7de", cursor: "pointer",
-    background: "#e9eef4",
-  },
-  card: { border: "1px solid #e5e7eb", background: "#0b2236", color: "#fff", borderRadius: 12, padding: 16 },
+  btn: { padding: "10px 14px", borderRadius: 10, border: "1px solid #d0d7de", background: "#e9eef4", cursor: "pointer" },
+  card: { border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, background: "#0b2236", color: "#fff" },
   resultPre: { whiteSpace: "pre-wrap", margin: 0 },
-  sectionTitle: { textAlign: "center", fontSize: 24, fontWeight: 800, margin: "28px 0 8px" },
+  partyWrap: { display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center", marginTop: 10 },
+  partyBtn: {
+    display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 16px",
+    borderRadius: 999, background: "#2a79b7", color: "#fff", border: "1px solid rgba(255,255,255,0.12)",
+    boxShadow: "0 6px 16px rgba(0,0,0,0.16)", cursor: "pointer", fontWeight: 700
+  },
+  partyLogo: { width: 22, height: 22, borderRadius: "50%", background: "#fff" },
+  modalBackdrop: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "grid", placeItems: "center", zIndex: 50 },
+  modalCard: { background: "#eaf5ff", width: "min(980px, 92vw)", borderRadius: 24, padding: 22, border: "1px solid #c7e0ff" },
+  formGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 },
+  label: { fontWeight: 700, marginBottom: 6, display: "block" },
+  input: {
+    width: "100%", padding: 12, borderRadius: 14, border: "1px solid #cbd5e1",
+    background: "#ffffff", fontSize: 15
+  },
+  multi: { width: "100%", padding: 10, borderRadius: 14, border: "1px solid #cbd5e1", background: "#fff", minHeight: 124 },
+  help: { fontSize: 12, opacity: 0.7, marginTop: 4 },
+  modalFooter: { display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 12 }
 };
 
-/** ---------- Country pills (hero) ---------- */
+/** Country pills for the hero */
 const COUNTRY_PILLS = [
   { key: "France",   flag: "https://flagcdn.com/w40/fr.png",  label: "France" },
   { key: "Germany",  flag: "https://flagcdn.com/w40/de.png",  label: "Germany" },
   { key: "Italy",    flag: "https://flagcdn.com/w40/it.png",  label: "Italy" },
   { key: "Spain",    flag: "https://flagcdn.com/w40/es.png",  label: "Spain" },
-  { key: "Poland",   flag: "https://flagcdn.com/w40/pl.png",  label: "Poland" },
+  { key: "Poland",   flag: "https://flagcdn.com/w40/pl.png",  label: "Poland" }
 ];
 
-/** ---------- Inline Party Spectrum (logos + abbreviations) ---------- */
-const PARTY_DATA = [
-  { country: "France", parties: [
-    { short: "PCF", name: "Parti communiste français", score: -8, logo: "https://upload.wikimedia.org/wikipedia/commons/9/9a/PCF_logo_2018.svg" },
-    { short: "LFI", name: "La France insoumise",       score: -7, logo: "https://upload.wikimedia.org/wikipedia/commons/0/09/LFI_Logo_2024.svg" },
-    { short: "EELV",name: "Europe Écologie – Les Verts",score: -5, logo: "https://upload.wikimedia.org/wikipedia/commons/1/1f/Logo_Europe_%C3%89cologie_Les_Verts.svg" },
-    { short: "PS",  name: "Parti socialiste",          score: -4, logo: "https://upload.wikimedia.org/wikipedia/commons/5/59/Parti_socialiste_%28France%29_logo_2015.svg" },
-    { short: "RE",  name: "Renaissance",               score:  1, logo: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Renaissance-logotype-officiel.svg" },
-    { short: "LR",  name: "Les Républicains",          score:  3, logo: "https://upload.wikimedia.org/wikipedia/commons/d/dc/Les_R%C3%A9publicains_-_logo_%28France%2C_2023%29.svg" },
-    { short: "REC", name: "Reconquête !",              score:  7, logo: "https://upload.wikimedia.org/wikipedia/commons/1/15/Reconqu%C3%AAte_logo_2021.svg" },
-    { short: "RN",  name: "Rassemblement national",    score:  8, logo: "https://upload.wikimedia.org/wikipedia/commons/0/0d/Logo_Rassemblement_National.svg" },
-  ]},
-  { country: "Germany", parties: [
-    { short: "Linke", name: "Die Linke", score: -7, logo: "https://upload.wikimedia.org/wikipedia/commons/0/02/Die_Linke_logo.svg" },
-    { short: "Grüne", name: "Bündnis 90/Die Grünen", score: -3, logo: "https://upload.wikimedia.org/wikipedia/commons/5/53/B%C3%BCndnis_90-Die_Gr%C3%BCnen_Logo.svg" },
-    { short: "SPD",   name: "Sozialdemokratische Partei Deutschlands", score: -1, logo: "https://upload.wikimedia.org/wikipedia/commons/6/61/SPD_logo.svg" },
-    { short: "BSW",   name: "Bündnis Sahra Wagenknecht", score: 1, logo: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Logo_B%C3%BCndnis_Sahra_Wagenknecht.svg" },
-    { short: "FDP",   name: "Freie Demokratische Partei", score: 2, logo: "https://upload.wikimedia.org/wikipedia/commons/7/7d/Logo_FDP.svg" },
-    { short: "CDU/CSU", name: "Union", score: 3, logo: "https://upload.wikimedia.org/wikipedia/commons/9/9f/CDU_Logo_2019.svg" },
-    { short: "AfD",   name: "Alternative für Deutschland", score: 8, logo: "https://upload.wikimedia.org/wikipedia/commons/7/7a/AfD-Logo_2017.svg" },
-  ]},
-  { country: "Italy", parties: [
-    { short: "AVS", name: "Alleanza Verdi e Sinistra", score: -6, logo: "https://upload.wikimedia.org/wikipedia/commons/1/19/Alleanza_Verdi_e_Sinistra_logo.svg" },
-    { short: "PD",  name: "Partito Democratico", score: -2, logo: "https://upload.wikimedia.org/wikipedia/commons/6/6b/Partito_Democratico_Logo_2023.svg" },
-    { short: "M5S", name: "Movimento 5 Stelle", score: 0,  logo: "https://upload.wikimedia.org/wikipedia/commons/0/0a/Movimento_5_Stelle_logo_2023.svg" },
-    { short: "Azione", name: "Azione", score: 1, logo: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Azione_logo.svg" },
-    { short: "IV",  name: "Italia Viva", score: 2, logo: "https://upload.wikimedia.org/wikipedia/commons/b/b5/Italia_Viva_logo_2019.svg" },
-    { short: "FI",  name: "Forza Italia", score: 4, logo: "https://upload.wikimedia.org/wikipedia/commons/6/69/Forza_Italia_logo_2017.svg" },
-    { short: "Lega",name: "Lega", score: 6, logo: "https://upload.wikimedia.org/wikipedia/commons/1/1a/Lega_Salvini_Premier_logo.svg" },
-    { short: "FdI", name: "Fratelli d'Italia", score: 7, logo: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Fratelli_d%27Italia_logo_2020.svg" },
-  ]},
-  { country: "Spain", parties: [
-    { short: "Podemos", name: "Podemos", score: -6, logo: "https://upload.wikimedia.org/wikipedia/commons/5/58/Podemos_2020_logo.svg" },
-    { short: "Sumar",   name: "Sumar", score: -4, logo: "https://upload.wikimedia.org/wikipedia/commons/4/45/Sumar_logo_2023.svg" },
-    { short: "PSOE",    name: "Partido Socialista Obrero Español", score: -2, logo: "https://upload.wikimedia.org/wikipedia/commons/0/03/PSOE_logo_2022.svg" },
-    { short: "PP",      name: "Partido Popular", score: 3, logo: "https://upload.wikimedia.org/wikipedia/commons/1/1c/Partido_Popular_logo_2022.svg" },
-    { short: "Vox",     name: "Vox", score: 7, logo: "https://upload.wikimedia.org/wikipedia/commons/3/36/Vox_logo.svg" },
-  ]},
-  { country: "Poland", parties: [
-    { short: "Lewica", name: "Lewica", score: -5, logo: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Lewica_logo.svg" },
-    { short: "KO",     name: "Koalicja Obywatelska", score: -1, logo: "https://upload.wikimedia.org/wikipedia/commons/1/1a/Koalicja_Obywatelska_logo.svg" },
-    { short: "TD",     name: "Trzecia Droga", score: 1, logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Trzecia_Droga_logo.svg" },
-    { short: "PiS",    name: "Prawo i Sprawiedliwość", score: 6, logo: "https://upload.wikimedia.org/wikipedia/commons/1/1f/Prawo_i_Sprawiedliwo%C5%9B%C4%87_logo.svg" },
-    { short: "Confed.",name: "Konfederacja", score: 8, logo: "https://upload.wikimedia.org/wikipedia/commons/9/9f/Konfederacja_logo.svg" },
-  ]},
-];
-
-function PartySpectrum() {
-  return (
-    <div>
-      <h2 style={s.sectionTitle}>Party Spectrum (Left → Right)</h2>
-      {PARTY_DATA.map(row => {
-        const sorted = [...row.parties].sort((a,b)=>a.score-b.score);
-        return (
-          <div key={row.country} style={{ margin: "18px 0", textAlign: "center" }}>
-            <h3 style={{ margin: "4px 0 12px" }}>{row.country}</h3>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
-              {sorted.map(p => (
-                <div key={p.short} title={p.name}
-                     style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #e5e7eb",
-                              borderRadius: 999, padding: "6px 12px", background: "#fff" }}>
-                  <img src={p.logo} alt={p.name} style={{ width: 22, height: 22, borderRadius: "50%" }}/>
-                  <span style={{ fontWeight: 700 }}>{p.short}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** ---------- Simple modal (for your survey) ---------- */
+/** Simple modal */
 function Modal({ open, onClose, children }) {
   if (!open) return null;
   return (
-    <div onClick={onClose}
-         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "grid", placeItems: "center", zIndex: 50 }}>
-      <div onClick={(e)=>e.stopPropagation()}
-           style={{ background: "white", borderRadius: 16, padding: 20, width: "min(720px,92vw)" }}>
+    <div style={ui.modalBackdrop} onClick={onClose}>
+      <div style={ui.modalCard} onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
   );
 }
 
-/** ---------------------------- APP ---------------------------- */
+/** Utility: normalize candidate item from getCandidates() to {short,name,logo,label} */
+function normalizeCandidate(item) {
+  if (typeof item === "string") {
+    // Try to extract abbrev in parentheses: "Parti Socialiste (PS)" -> short: PS
+    const m = item.match(/^(.*)\\s*\\(([^)]+)\\)\\s*$/);
+    return m ? { name: m[1].trim(), short: m[2].trim(), label: m[2].trim() } : { name: item, short: item, label: item };
+  }
+  const short = item.short || item.abbrev || item.code || item.name;
+  const name = item.name || item.full || short;
+  return { name, short, logo: item.logo, label: short };
+}
+
+/** ====== Main App ====== */
 export default function App() {
   const countries = useMemo(() => COUNTRIES ?? [], []);
   const [country, setCountry] = useState(null);
-  const [candidate, setCandidate] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [party, setParty] = useState(null); // string short label
+  const [partyFull, setPartyFull] = useState(null); // full name for copy
+  const [showSurvey, setShowSurvey] = useState(false);
   const [result, setResult] = useState(null);
 
-  const candidates = useMemo(
-    () => (country ? getCandidates(country) : []),
-    [country]
-  );
+  const candidates = useMemo(() => {
+    if (!country) return [];
+    try { return (getCandidates(country) || []).map(normalizeCandidate); }
+    catch { return []; }
+  }, [country]);
+
+  /** limiter: allow max 3 major concerns */
+  function limitConcerns(e) {
+    const opts = Array.from(e.target.options);
+    const selected = opts.filter(o => o.selected);
+    if (selected.length > 3) {
+      // unselect the last toggled option
+      const last = selected[selected.length - 1];
+      last.selected = false;
+    }
+  }
 
   async function runImpact(e) {
-    e?.preventDefault?.();
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const payload = {
+      country,
+      party,
+      profile: {
+        age: Number(form.get("age") || 0),
+        gender: String(form.get("gender") || ""),
+        cityRural: String(form.get("cityRural") || ""),
+        incomeMonthly: Number(form.get("income") || 0),
+        employment: String(form.get("employment") || ""),
+        home: String(form.get("home") || ""),
+        commute: String(form.get("commute") || ""),
+        concerns: form.getAll("concerns"),
+        religion: String(form.get("religion") || ""),
+        raceEthnicity: String(form.get("race") || "")
+      }
+    };
     try {
-      const r = await analyzeImpact({ country, candidate });
+      const r = await analyzeImpact(payload);
       setResult(r);
     } catch (err) {
-      setResult({ error: String(err) });
+      setResult({ error: String(err), input: payload });
     } finally {
-      setShowModal(false);
+      setShowSurvey(false);
     }
   }
 
   return (
-    <div style={s.page}>
+    <div style={ui.page}>
       {/* HERO */}
-      <h1 style={s.h1}>Manifesto AI</h1>
-      <p style={s.sub}>Pick a country, choose a candidate, then analyze your personal impact.</p>
+      <h1 style={ui.heroH1}>Manifesto AI</h1>
+      <p style={ui.heroSub}>Pick a country, then choose a party to analyze your personal impact.</p>
 
       {/* COUNTRY PILLS */}
-      <div style={s.pillRow}>
+      <div style={ui.row}>
         {COUNTRY_PILLS.map(c => (
-          <button key={c.key} type="button" style={s.pill}
-                  onClick={() => { setCountry(c.key); setCandidate(null); setResult(null); }}>
-            <img src={c.flag} alt={c.label} style={s.flag} />
+          <button key={c.key} style={ui.pill} onClick={() => {
+            setCountry(c.key);
+            setParty(null);
+            setPartyFull(null);
+            setResult(null);
+          }}>
+            <img src={c.flag} alt={c.label} style={ui.flag} />
             {c.label}
           </button>
         ))}
       </div>
 
-      {/* CONTROLS (appear after choosing country) */}
-      <div style={s.controls}>
-        <div>
-          <label style={{ fontSize: 12, opacity: 0.75 }}>Country</label>
-          <select value={country ?? ""} onChange={(e)=>{ setCountry(e.target.value || null); setCandidate(null); setResult(null); }} style={s.select}>
-            <option value="">— Select —</option>
-            {countries.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-
-        <div>
-          <label style={{ fontSize: 12, opacity: 0.75 }}>Party / Candidate</label>
-          <select value={candidate ?? ""} onChange={(e)=>setCandidate(e.target.value || null)} disabled={!country} style={s.select}>
-            <option value="">— Select —</option>
+      {/* If a country is chosen, reveal party buttons */}
+      {country && (
+        <>
+          <h2 style={ui.sectionH2}>{country} — Parties</h2>
+          <div style={ui.partyWrap}>
             {candidates.map(p => (
-              <option key={typeof p === "string" ? p : p.short || p.name}
-                      value={typeof p === "string" ? p : p.short || p.name}>
-                {typeof p === "string" ? p : (p.short || p.name)}
-              </option>
+              <button key={p.label}
+                style={ui.partyBtn}
+                title={p.name}
+                onClick={() => {
+                  setParty(p.short);
+                  setPartyFull(p.name);
+                  setShowSurvey(true);
+                }}
+              >
+                {p.logo && <img src={p.logo} alt={p.name} style={ui.partyLogo} />}
+                <span>{p.short}</span>
+              </button>
             ))}
-          </select>
-        </div>
-
-        <button style={s.btn} disabled={!country || !candidate} onClick={()=>setShowModal(true)}>
-          Analyze Further
-        </button>
-      </div>
-
-      {/* PARTY SPECTRUM */}
-      <PartySpectrum />
+          </div>
+        </>
+      )}
 
       {/* RESULT */}
-      <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
-        <div style={s.card}>
+      <div style={{ maxWidth: 980, margin: "26px auto 0" }}>
+        <div style={ui.card}>
           <strong>Result:</strong>
-          <pre style={s.resultPre}>
-{JSON.stringify(result ?? { info: "Choose country & party, then click Analyze Further." }, null, 2)}
+          <pre style={ui.resultPre}>
+{JSON.stringify(result ?? { info: "Choose a country, click a party, complete the survey." }, null, 2)}
           </pre>
         </div>
       </div>
 
-      {/* SURVEY MODAL */}
-      <Modal open={showModal} onClose={()=>setShowModal(false)}>
-        <h3 style={{ marginTop: 0 }}>Quick Survey</h3>
-        <form onSubmit={runImpact} style={{ display: "grid", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <label>Age<input type="number" name="age" min="16" max="99" style={s.select}/></label>
-            <label>Monthly Income (€)<input type="number" name="income" style={s.select}/></label>
+      {/* SURVEY (detailed) */}
+      <Modal open={showSurvey} onClose={() => setShowSurvey(false)}>
+        <h2 style={{ margin: 0, fontSize: 26, fontWeight: 800 }}>Your Profile</h2>
+        <p style={{ marginTop: 8, marginBottom: 18, opacity: 0.8 }}>
+          Answer a few questions so we can show how policies in <b>{country || "—"}</b>
+          {partyFull ? <> by <b>{partyFull} ({party})</b></> : null} may impact you.
+        </p>
+
+        <form onSubmit={runImpact} style={{ display: "grid", gap: 14 }}>
+          <div style={ui.formGrid}>
+            <div>
+              <label style={ui.label}>Age</label>
+              <input name="age" type="number" min="16" max="99" style={ui.input} />
+            </div>
+            <div>
+              <label style={ui.label}>Gender</label>
+              <select name="gender" style={ui.input}>
+                <option>Female</option><option>Male</option><option>Other</option><option>Prefer not to say</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={ui.label}>City vs Rural</label>
+              <select name="cityRural" style={ui.input}>
+                <option>City</option><option>Suburban</option><option>Rural</option>
+              </select>
+            </div>
+            <div>
+              <label style={ui.label}>Monthly Income (€)</label>
+              <input name="income" type="number" style={ui.input} />
+            </div>
+
+            <div>
+              <label style={ui.label}>Employment Status</label>
+              <select name="employment" style={ui.input}>
+                <option>Employed</option><option>Self-employed</option>
+                <option>Unemployed</option><option>Student</option><option>Retired</option>
+              </select>
+            </div>
+            <div>
+              <label style={ui.label}>Home Ownership</label>
+              <select name="home" style={ui.input}>
+                <option>Own</option><option>Rent</option><option>Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={ui.label}>Commute Type</label>
+              <select name="commute" style={ui.input}>
+                <option>Public Transport</option><option>Car</option><option>Walk</option><option>Bike</option><option>Other</option>
+              </select>
+            </div>
+            <div>
+              <label style={ui.label}>Major Concerns (up to 3)</label>
+              <select name="concerns" multiple onChange={limitConcerns} style={ui.multi}>
+                <option>Economy</option>
+                <option>Healthcare</option>
+                <option>Environment</option>
+                <option>Taxes</option>
+                <option>Social Programs</option>
+                <option>Immigration</option>
+              </select>
+              <div style={ui.help}>Hold Cmd/Ctrl to multi-select. Max 3 will be recorded.</div>
+            </div>
+
+            <div>
+              <label style={ui.label}>Religion (optional)</label>
+              <input name="religion" type="text" style={ui.input} />
+            </div>
+            <div>
+              <label style={ui.label}>Race / Ethnicity (optional)</label>
+              <input name="race" type="text" style={ui.input} />
+            </div>
           </div>
-          <label>Employment
-            <select name="employment" style={s.select}>
-              <option>Employed</option><option>Self-employed</option>
-              <option>Unemployed</option><option>Student</option><option>Retired</option>
-            </select>
-          </label>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button type="button" onClick={()=>setShowModal(false)} style={s.btn}>Cancel</button>
-            <button type="submit" style={s.btn}>Run Impact</button>
+
+          <div style={ui.modalFooter}>
+            <button type="button" onClick={() => setShowSurvey(false)} style={ui.btn}>Cancel</button>
+            <button type="submit" style={{ ...ui.btn, background: "#2a79b7", color: "#fff", borderColor: "#256aa0" }}>
+              See My Impact
+            </button>
           </div>
         </form>
       </Modal>
