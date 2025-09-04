@@ -18,21 +18,21 @@ export const POLICY_INDEX = {
       prices_energy: {
         stance: "freeze_prices",
         effect: { energy_price_cap: true },
-        details: "Freeze/strictly regulate energy prices during crises.",
+        details: "Freeze or strictly regulate energy prices during crises.",
         source: "https://programme.lafranceinsoumise.fr"
       }
     },
     RE: {
       wages_minimum: {
         stance: "status_quo_min_wage",
-        effect: { smic_indexation: "targeted boosts via bonuses" },
-        details: "Maintain current framework; rely on bonuses/in-work incentives.",
+        effect: { smic_indexation: "bonuses / incentives" },
+        details: "Maintain current framework; rely on in-work bonuses/incentives.",
         source: "https://parti-renaissance.fr/le-parti"
       },
       retirement_age: {
         stance: "higher_retirement",
         effect: { legal_age: 64 },
-        details: "Reform to increase legal retirement age, with exceptions.",
+        details: "Increase legal retirement age (with exceptions).",
         source: "https://parti-renaissance.fr/le-parti"
       },
       energy_mix: {
@@ -68,7 +68,7 @@ export const POLICY_INDEX = {
       building_renovation: {
         stance: "massive_retrofit",
         effect: { retrofit_scale: "massive" },
-        details: "Large-scale building retrofit program with social safeguards.",
+        details: "Large-scale retrofit program with social safeguards.",
         source: "https://cf.eelv.fr/projet-des-ecologistes-2022/"
       },
       fossil_subsidies: {
@@ -82,7 +82,7 @@ export const POLICY_INDEX = {
       tax_work_prod: {
         stance: "lower_taxes_on_work_prod",
         effect: { employer_charges_down: true },
-        details: "Cut taxes/charges on work and production; simplify red tape.",
+        details: "Cut taxes/charges on work & production; simplify red tape.",
         source: "https://www.republicains.fr/nos-idees/"
       },
       security_sentencing: {
@@ -96,7 +96,7 @@ export const POLICY_INDEX = {
       workweek: {
         stance: "32h_week",
         effect: { legal_hours: 32 },
-        details: "Move toward a 32-hour workweek; salary increases; stronger unions.",
+        details: "Move toward a 32-hour workweek; wage hikes; stronger unions.",
         source: "https://www.pcf.fr/le_programme"
       },
       public_ownership: {
