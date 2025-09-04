@@ -1,42 +1,30 @@
 {
-  "manifests": [
-    { "country": "France",  "candidate": "Parti Communiste Français (PCF)",                      "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "France",  "candidate": "La France Insoumise (LFI)",                            "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "France",  "candidate": "Europe Écologie–Les Verts (EELV)",                     "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "France",  "candidate": "Parti Socialiste (PS)",                                 "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "France",  "candidate": "Ensemble (Renaissance + MoDem + Horizons)",            "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "France",  "candidate": "Les Républicains (LR)",                                 "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "France",  "candidate": "Rassemblement National (RN)",                           "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "France",  "candidate": "Reconquête!",                                           "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-
-    { "country": "Germany", "candidate": "Die Linke",                                             "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Germany", "candidate": "Greens (Bündnis 90/Die Grünen)",                        "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Germany", "candidate": "SPD",                                                   "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Germany", "candidate": "FDP",                                                   "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Germany", "candidate": "CDU/CSU",                                               "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Germany", "candidate": "AfD",                                                   "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-
-    { "country": "Italy",   "candidate": "Alleanza Verdi e Sinistra (AVS)",                       "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Italy",   "candidate": "Partito Democratico (PD)",                              "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Italy",   "candidate": "Movimento 5 Stelle (M5S)",                              "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Italy",   "candidate": "+Europa",                                               "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Italy",   "candidate": "Italia Viva (IV)",                                      "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Italy",   "candidate": "Azione",                                                "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Italy",   "candidate": "Forza Italia (FI)",                                     "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Italy",   "candidate": "Lega",                                                  "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Italy",   "candidate": "Fratelli d’Italia (FdI)",                               "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-
-    { "country": "Spain",   "candidate": "Podemos",                                               "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Spain",   "candidate": "Sumar",                                                 "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Spain",   "candidate": "PSOE",                                                  "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Spain",   "candidate": "Partido Popular (PP)",                                  "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Spain",   "candidate": "Vox",                                                   "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-
-    { "country": "Poland",  "candidate": "The Left (Lewica)",                                     "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Poland",  "candidate": "Civic Coalition (KO)",                                  "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Poland",  "candidate": "Poland 2050",                                           "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Poland",  "candidate": "Polish People’s Party (PSL)",                           "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Poland",  "candidate": "United Right (PiS)",                                    "source_manifesto_url": "", "retrieved_at": "", "policies": [] },
-    { "country": "Poland",  "candidate": "Confederation",                                         "source_manifesto_url": "", "retrieved_at": "", "policies": [] }
+  "countries": [
+    {
+      "code": "FR",
+      "name": "France",
+      "flag": "🇫🇷",
+      "parties": [
+        { "id": "fr.lfi", "name": "La France Insoumise", "ideology": "Left", "logo": "" },
+        { "id": "fr.pcf", "name": "Parti Communiste Français", "ideology": "Left", "logo": "" },
+        { "id": "fr.eelv", "name": "Europe Écologie – Les Verts", "ideology": "Green", "logo": "" },
+        { "id": "fr.ps",  "name": "Parti Socialiste", "ideology": "Center-left", "logo": "" },
+        { "id": "fr.re",  "name": "Renaissance", "ideology": "Centrist", "logo": "" },
+        { "id": "fr.lr",  "name": "Les Républicains", "ideology": "Center-right", "logo": "" },
+        { "id": "fr.rn",  "name": "Rassemblement National", "ideology": "Right", "logo": "" }
+      ]
+    },
+    {
+      "code": "DE",
+      "name": "Germany",
+      "flag": "🇩🇪",
+      "parties": []
+    },
+    {
+      "code": "IT",
+      "name": "Italy",
+      "flag": "🇮🇹",
+      "parties": []
+    }
   ]
 }
