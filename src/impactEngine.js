@@ -1,92 +1,154 @@
-import { getAssumption } from "./config/assumptions";    // <= must be ./config/...
-import { getManifest } from "./lib/load";  
+// src/impactEngine.js
+import { POLICY_INDEX } from "./lib/policyIndex";
 
-// Eligibility checker
-function eligible(user, e = {}){
-  const inList = (k, v) => !e[k] || e[k].includes(v);
-  if (!inList("home_in", user.home)) return false;
-  if (!inList("commute_in", user.commute)) return false;
-  if (!inList("employment_in", user.employment)) return false;
-  if (!inList("location_in", user.location)) return false;
-
-  const inc = Number(user.income || 0);
-  if (e.income_lt  !== undefined && !(inc <  e.income_lt))  return false;
-  if (e.income_lte !== undefined && !(inc <= e.income_lte)) return false;
-  if (e.income_gt  !== undefined && !(inc >  e.income_gt))  return false;
-  if (e.income_gte !== undefined && !(inc >= e.income_gte)) return false;
-
-  const age = Number(user.age || 0);
-  if (e.age_lt  !== undefined && !(age <  e.age_lt))  return false;
-  if (e.age_lte !== undefined && !(age <= e.age_lte)) return false;
-  if (e.age_gt  !== undefined && !(age >  e.age_gt))  return false;
-  if (e.age_gte !== undefined && !(age >= e.age_gte)) return false;
-
-  return true;
-}
-
-// Compute handlers
-const COMPUTE = {
-  fixed_benefit: ({ params }) => ({ monthlyBenefit: Number(params.amount || 0) }),
-  fixed_cost:    ({ params }) => ({ monthlyCost:    Number(params.amount || 0) }),
-
-  vat_delta: ({ params, user, country }) => {
-    const delta = Number(params.delta || 0); // +0.01 = +1pp
-    const share = Number(params.spend_share ?? getAssumption(country, "vat_spend_share"));
-    const inc = Number(user.income || 0);
-    return { monthlyCost: delta * share * inc };
-  },
-
-  fuel_duty_delta: ({ params, user, country }) => {
-    if (user.commute !== "Car") return {};
-    const perL   = Number(params.delta_per_liter || 0);
-    const liters = Number(params.liters_per_month ?? getAssumption(country, "fuel_liters_per_month"));
-    return { monthlyCost: perL * liters };
-  },
-
-  self_employed_charge_delta: ({ params, user }) => {
-    if (user.employment !== "Self-employed") return {};
-    return { monthlyBenefit: Number(params.amount || 0) };
-  }
-};
-
-function computePolicy(policy, user, country){
-  const h = COMPUTE[policy.compute?.type];
-  if (!h) return {};
-  return h({ params: policy.compute.params || {}, user, country });
-}
-
-export function analyzeImpact(user, country, candidate){
-  const manifest = getManifest(country, candidate);
-  const rows = [];
-  let monthlyCost = 0, monthlyBenefit = 0;
-
-  const policies = manifest?.policies || [];
-  for (const p of policies){
-    if (!eligible(user, p.eligibility, country)) continue;
-    const out = computePolicy(p, user, country);
-    const cost = Number(out.monthlyCost || 0);
-    const ben  = Number(out.monthlyBenefit || 0);
-    monthlyCost    += cost;
-    monthlyBenefit += ben;
-    rows.push({
-      id: p.id,
-      title: p.title,
-      description: p.description,
-      source_url: p.source_url,
-      effective_date: p.effective_date || null,
-      monthlyCost: +cost.toFixed(2),
-      monthlyBenefit: +ben.toFixed(2),
-      note: p.notes || null
-    });
+/**
+ * analyzeImpact({ country, party, profile })
+ * Returns { topics: [...], summary } with neutral, sourced explanations.
+ */
+export async function analyzeImpact({ country, party, profile }) {
+  const kbParty = POLICY_INDEX[country]?.[party];
+  if (!kbParty) {
+    return {
+      topics: [],
+      summary: `No policy data found for ${party} in ${country}. Add entries to POLICY_INDEX.`,
+    };
   }
 
-  return {
-    country,
-    candidate,
-    source_manifesto_url: manifest?.source_manifesto_url || "",
-    rows,
-    monthlyCost: +monthlyCost.toFixed(2),
-    monthlyBenefit: +monthlyBenefit.toFixed(2),
-    net: +(monthlyBenefit - monthlyCost).toFixed(2)
-  };
+  // 1) Build a user context vector from the survey.
+  const user = normalizeProfile(profile);
+
+  // 2) Compute per-topic impacts with deterministic rules.
+  const topics = Object.entries(kbParty).map(([topicKey, policy]) => {
+    const impact = scoreImpact(topicKey, policy, user);
+    return {
+      topic: topicKey,
+      verdict: impact.verdict,             // "likely_positive" | "mixed" | "unclear" | "likely_negative"
+      rationale: impact.rationale,         // short plain-language reasoning
+      details: policy.details,
+      source: policy.source,
+      signals: impact.signals              // what in the user's profile triggered this
+    };
+  });
+
+  // 3) Aggregate a short neutral summary.
+  const counts = topics.reduce((acc, t) => {
+    acc[t.verdict] = (acc[t.verdict] || 0) + 1;
+    return acc;
+  }, {});
+  const summary = summarizeCounts(counts);
+
+  return { topics, summary };
+}
+
+/** Turn raw survey answers into easy testable flags */
+function normalizeProfile(p) {
+  const incomeBand = parseIncomeBand(String(p.income || ""));
+  const age = Number(p.age || 0);
+  const isStudent = String(p.employment || "").toLowerCase().includes("student");
+  const isRetired = String(p.employment || "").toLowerCase().includes("retired");
+  const commute = String(p.commute || "").toLowerCase(); // car / public transport / bike / walk / other
+  const locale = String(p.cityRural || "").toLowerCase(); // city/town/suburban/rural
+
+  return { incomeBand, age, isStudent, isRetired, commute, locale, concerns: p.concerns || [] };
+}
+
+function parseIncomeBand(label) {
+  // map your UI labels to numeric ranges for reasoning
+  const clean = label.replace(/[,€]/g, "");
+  const m = clean.match(/(\d+)\s*–\s*(\d+)/) || clean.match(/Less than\s*(\d+)/i) || clean.match(/(\d+)\s*or more/i);
+  if (!m) return { min: null, max: null, label };
+  if (/Less than/i.test(clean)) return { min: 0, max: Number(m[1]), label };
+  if (/or more/i.test(clean)) return { min: Number(m[1]), max: null, label };
+  return { min: Number(m[1]), max: Number(m[2]), label };
+}
+
+/** Rule-based impact scoring (transparent & editable) */
+function scoreImpact(topicKey, policy, user) {
+  const sig = []; // signals explaining the scoring
+  let verdict = "unclear";
+  let rationale = "Insufficient information for a specific effect.";
+
+  // Examples of transparent mappings (extend freely)
+  switch (topicKey) {
+    case "wages_minimum":
+      if (user.incomeBand.max !== null && user.incomeBand.max < 1600) {
+        verdict = "likely_positive";
+        rationale = "Minimum-wage increase could lift monthly pay closer to 1,600€ net.";
+        sig.push("income < 1,600€");
+      } else if (user.incomeBand.min !== null && user.incomeBand.min >= 1600) {
+        verdict = "mixed";
+        rationale = "You already earn above the proposed minimum; indirect effects depend on sector.";
+        sig.push("income ≥ 1,600€");
+      }
+      break;
+
+    case "retirement_age":
+      if (user.age >= 55 && !user.isStudent) {
+        // older workers see nearer-term change
+        verdict = "likely_positive";
+        rationale = "Lower legal retirement age could bring eligibility sooner.";
+        sig.push("age ≥ 55");
+      } else {
+        verdict = "mixed";
+        rationale = "Effect depends on your contribution years and career trajectory.";
+      }
+      break;
+
+    case "prices_energy":
+      if (["city", "town", "suburban", "rural"].includes(user.locale)) {
+        verdict = "likely_positive";
+        rationale = "Energy price caps/freezes aim to reduce household bill volatility.";
+        sig.push("household energy consumer");
+      }
+      break;
+
+    case "energy_mix":
+      if (user.concerns.map(s=>s.toLowerCase()).includes("environment")) {
+        verdict = "mixed";
+        rationale = "Nuclear+renewables can lower emissions, but views differ on nuclear risks/costs.";
+        sig.push("concern: environment");
+      } else {
+        verdict = "unclear";
+      }
+      break;
+
+    case "vat_essentials":
+      verdict = "likely_positive";
+      rationale = "Lower VAT on essentials typically reduces consumer prices in the basket.";
+      sig.push("consumer prices");
+
+      // larger effect for low incomes
+      if (user.incomeBand.max !== null && user.incomeBand.max < 2000) {
+        rationale += " Lower-income households may benefit more as essentials are a larger budget share.";
+        sig.push("income < 2,000€");
+      }
+      break;
+
+    case "building_renovation":
+      verdict = "mixed";
+      rationale = "Large retrofit programs can cut bills and emissions; timelines and eligibility vary.";
+      if (user.locale === "rural" || user.locale === "town") sig.push("home energy savings potential");
+      break;
+
+    case "tax_work_prod":
+      verdict = "mixed";
+      rationale = "Lower charges on work/production can support firms/jobs; fiscal trade-offs depend on design.";
+      break;
+
+    case "immigration_rules":
+      verdict = "policy_change";
+      rationale = "Rules would tighten; direct personal impact depends on your status and plans.";
+      break;
+
+    default:
+      verdict = "unclear";
+  }
+
+  return { verdict, rationale, signals: sig };
+}
+
+function summarizeCounts(counts) {
+  const order = ["likely_positive", "mixed", "unclear", "likely_negative", "policy_change"];
+  const parts = order.filter(k => counts[k]).map(k => `${k.replace("_", " ")}: ${counts[k]}`);
+  return parts.length ? parts.join(" • ") : "No clear effects detected with current answers.";
 }
